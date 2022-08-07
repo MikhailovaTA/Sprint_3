@@ -8,12 +8,14 @@ import org.junit.Test;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
+import static tests.serialization.Config.BASE_URL;
+import static tests.serialization.OrderMethods.ORDERS_METHOD;
 
 public class GetOrderTest {
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "http://qa-scooter.praktikum-services.ru";
+        RestAssured.baseURI = BASE_URL;
     }
 
     @Test
@@ -23,7 +25,7 @@ public class GetOrderTest {
         List<Object> responceServer = given()
             .header("Content-type", "application/json")
             .when().param("limit", limit)
-            .get("/api/v1/orders")
+            .get(ORDERS_METHOD)
             .body().path("orders");
 
         MatcherAssert.assertThat("", !(responceServer.isEmpty()));

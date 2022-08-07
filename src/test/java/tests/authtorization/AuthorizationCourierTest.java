@@ -2,16 +2,16 @@ package tests.authtorization;
 
 import io.restassured.RestAssured;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.HttpStatus;
 import org.hamcrest.MatcherAssert;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import tests.serialization.CourierUtils;
+import tests.serialization.CourierMethods;
 import tests.serialization.DataCourier;
-import tests.deserialization.ResponceServerForAuthorization;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static tests.serialization.Config.BASE_URL;
 
 public class AuthorizationCourierTest {
 
@@ -20,81 +20,46 @@ public class AuthorizationCourierTest {
 
     @BeforeClass
     public static void setUp() {
-        RestAssured.baseURI = "http://qa-scooter.praktikum-services.ru";
+        RestAssured.baseURI = BASE_URL;
         login = RandomStringUtils.randomAlphabetic(10);
         password = RandomStringUtils.randomAlphabetic(8);
-        CourierUtils.createCourier(login, password);
+        CourierMethods.createCourier(new DataCourier(login, password, null));
     }
 
     @Test
     public void checkAuthorizationCourier(){
-        DataCourier dataCourier = new DataCourier(login, password, "123");
-        given()
-            .header("Content-type", "application/json")
-            .body(dataCourier)
-            .post("/api/v1/courier/login")
-            .then().assertThat().statusCode(200);
+        CourierMethods.authorizationCourierAndAssertCode(new DataCourier(login, password, "123"), HttpStatus.SC_OK);
     }
 
     @Test
     public void checkAuthorizationWithoutLogin(){
-        DataCourier dataCourier = new DataCourier(null, password, null);
-        given()
-            .header("Content-type", "application/json")
-            .body(dataCourier)
-            .when()
-            .post("/api/v1/courier/login")
-            .then().assertThat().statusCode(400);
+        CourierMethods.authorizationCourierAndAssertCode(new DataCourier(null, password, null), HttpStatus.SC_BAD_REQUEST);
     }
 
     //баг, возвращает 504 ошибку
     @Test
     public void checkAuthorizationWithoutPassword(){
-        DataCourier dataCourier = new DataCourier(login, null, null);
-        given()
-            .header("Content-type", "application/json")
-            .body(dataCourier)
-            .when()
-            .post("/api/v1/courier/login")
-            .then().assertThat().statusCode(404);
+        CourierMethods.authorizationCourierAndAssertCode(new DataCourier(login, null, null), HttpStatus.SC_NOT_FOUND);
     }
 
     @Test
     public void checkAuthorizationWithWrongPassword(){
-        DataCourier dataCourier = new DataCourier(login, "parcer", null);
-        given()
-            .header("Content-type", "application/json")
-            .body(dataCourier)
-            .when()
-            .post("/api/v1/courier/login")
-            .then().assertThat().statusCode(404);
+        CourierMethods.authorizationCourierAndAssertCode(new DataCourier(login, "parcer", null), HttpStatus.SC_NOT_FOUND);
     }
 
     @Test
     public void checkAuthorizationWithWrongLogin(){
-        DataCourier dataCourier = new DataCourier("piter_1997", password, null);
-        given()
-            .header("Content-type", "application/json")
-            .body(dataCourier)
-            .when()
-            .post("/api/v1/courier/login")
-            .then().assertThat().statusCode(404);
+        CourierMethods.authorizationCourierAndAssertCode(new DataCourier("piter_1997", password, null), HttpStatus.SC_NOT_FOUND);
     }
 
     @Test
     public void checkBodyMessageForSuccessfulAuthorization() {
-        DataCourier dataCourier = new DataCourier(login, password, null);
-        ResponceServerForAuthorization responceServer = given()
-            .header("Content-type", "application/json")
-            .body(dataCourier)
-            .post("/api/v1/courier/login")
-            .body()
-            .as(ResponceServerForAuthorization.class);
-        MatcherAssert.assertThat(responceServer.getId(), not(equalTo(0)));
+        int courierId = CourierMethods.authorizationCourier(new DataCourier(login, password, null));
+        MatcherAssert.assertThat(courierId, not(equalTo(0)));
     }
 
     @AfterClass
     public static void clear(){
-        CourierUtils.deleteCourier(login, password);
+        CourierMethods.deleteCourier(new DataCourier(login, password, null));
     }
 }

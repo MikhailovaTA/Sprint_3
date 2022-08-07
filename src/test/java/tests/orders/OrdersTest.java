@@ -1,6 +1,7 @@
 package tests.orders;
 
 import io.restassured.RestAssured;
+import org.apache.http.HttpStatus;
 import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Test;
@@ -8,11 +9,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import tests.serialization.DateOrdersRequest;
 import tests.deserialization.ResponceServerForCreateOrder;
+import tests.serialization.OrderMethods;
 
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static tests.serialization.Config.BASE_URL;
 
 @RunWith(Parameterized.class)
 public class OrdersTest {
@@ -24,7 +27,7 @@ public class OrdersTest {
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "http://qa-scooter.praktikum-services.ru";
+        RestAssured.baseURI = BASE_URL;
     }
 
     @Parameterized.Parameters
@@ -47,22 +50,12 @@ public class OrdersTest {
 
     @Test
     public void checkCreateOrder(){
-        given()
-            .header("Content-type", "application/json")
-                .body(dateOrdersRequest)
-                .when()
-                .post("/api/v1/orders")
-                .then().assertThat().statusCode(201);
+        OrderMethods.createOrderAndAssertCode(dateOrdersRequest, HttpStatus.SC_CREATED);
         }
 
     @Test
     public void checkBodyMessageForSuccessfulOrder() {
-        ResponceServerForCreateOrder responceServer = given()
-            .header("Content-type", "application/json")
-            .body(dateOrdersRequest)
-            .post("/api/v1/orders")
-            .body()
-            .as(ResponceServerForCreateOrder.class);
+        ResponceServerForCreateOrder responceServer = OrderMethods.createOrder(dateOrdersRequest);
         MatcherAssert.assertThat(responceServer.getTrack(), not(equalTo(0)));
     }
 }

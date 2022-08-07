@@ -2,40 +2,31 @@ package tests.courier;
 
 import io.restassured.RestAssured;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
+import tests.serialization.CourierMethods;
 import tests.serialization.DataCourier;
 
 import static io.restassured.RestAssured.given;
+import static tests.serialization.Config.BASE_URL;
 
 public class CreateCourierNegativeTest {
 
     @Before
     public void setUp() {
-        RestAssured.baseURI = "http://qa-scooter.praktikum-services.ru";
+        RestAssured.baseURI = BASE_URL;
     }
 
     @Test
     public void chekCreateCourierWithoutLogin() {
         String password = RandomStringUtils.randomAlphabetic(8);
-        DataCourier dataCourier = new DataCourier(null, password, "Piter");
-        given()
-            .header("Content-type", "application/json")
-            .body(dataCourier)
-            .when()
-            .post("/api/v1/courier")
-            .then().assertThat().statusCode(400);
+        CourierMethods.createCourierAndAssertCode(new DataCourier(null, password, "Piter"), HttpStatus.SC_BAD_REQUEST);
     }
 
     @Test
     public void chekCreateCourierWithoutPassword() {
         String login = RandomStringUtils.randomAlphabetic(10);
-        DataCourier dataCourier = new DataCourier(login, null, "Piter");
-        given()
-            .header("Content-type", "application/json")
-            .body(dataCourier)
-            .when()
-            .post("/api/v1/courier")
-            .then().assertThat().statusCode(400);
+        CourierMethods.createCourierAndAssertCode(new DataCourier(login, null, "Piter"), HttpStatus.SC_BAD_REQUEST);
     }
 }
